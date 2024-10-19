@@ -6,35 +6,25 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 include_directories(include)
 
+find_package(Python3 COMPONENTS Interpreter Development NumPy REQUIRED)
+
+
+include_directories(${Python3_INCLUDE_DIRS})
+include_directories(${Python3_NumPy_INCLUDE_DIRS})
 
 find_package(CURL REQUIRED)
 find_library(HIREDIS_LIB hiredis REQUIRED)
 find_library(SQLITE3_LIB sqlite3 REQUIRED)
 find_package(jsoncpp REQUIRED)
 
-file(GLOB_RECURSE ALGO_ENGINE_SOURCES
-    "src/AlgoEngine-Core/indicators/*.cpp"
-)
-
-file(GLOB_RECURSE DATA_FETCHER_SOURCES
-    "src/Data-Fetcher-Core/*.cpp"
-)
-
-file(GLOB_RECURSE IO_BROKER_SOURCES
-    "src/IO-Broker-Core/*.cpp"
-)
-
-file(GLOB_RECURSE ORDER_MANAGER_SOURCES
-    "src/Order-Manager-Core/*.cpp"
-)
-
-file(GLOB_RECURSE RISK_ANALYSIS_SOURCES
-    "src/Risk-Analysis-Core/*.cpp"
-)
-
-file(GLOB_RECURSE VELOCITY_BOT_SOURCES
-    "src/Velocity-Bot/*.cpp"
-)
+file(GLOB_RECURSE ALGO_ENGINE_SOURCES "src/AlgoEngine-Core/indicators/*.cpp")
+file(GLOB_RECURSE DATA_FETCHER_SOURCES "src/Data-Fetcher-Core/*.cpp")
+file(GLOB_RECURSE IO_BROKER_SOURCES "src/IO-Broker-Core/*.cpp")
+file(GLOB_RECURSE ORDER_MANAGER_SOURCES "src/Order-Manager-Core/*.cpp")
+file(GLOB_RECURSE RISK_ANALYSIS_SOURCES "src/Risk-Analysis-Core/*.cpp")
+file(GLOB_RECURSE VELOCITY_BOT_SOURCES "src/Velocity-Bot/*.cpp")
+file(GLOB_RECURSE BACKTESTING_BOT_SOURCES "src/Backtesting-Bot/*.cpp")
+file(GLOB_RECURSE UTILITY_SOURCES "src/Utilities/*.cpp")
 
 
 set(UTILITIES_SOURCES
@@ -46,6 +36,7 @@ set(UTILITIES_SOURCES
     include/Utilities/Utilities.hpp
 )
 
+
 set(SOURCES
     ${ALGO_ENGINE_SOURCES}
     ${DATA_FETCHER_SOURCES}
@@ -53,16 +44,22 @@ set(SOURCES
     ${ORDER_MANAGER_SOURCES}
     ${RISK_ANALYSIS_SOURCES}
     ${VELOCITY_BOT_SOURCES}
-    src/main.cpp # The main program file
+    ${BACKTESTING_BOT_SOURCES}
+    ${UTILITY_SOURCES}
+    src/main.cpp 
 )
 
+
 add_executable(VelocityVortex ${SOURCES})
+
 
 target_link_libraries(VelocityVortex
     CURL::libcurl
     jsoncpp_lib
     ${HIREDIS_LIB}
     ${SQLITE3_LIB}
+    ${Python3_LIBRARIES}
 )
+
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/..)

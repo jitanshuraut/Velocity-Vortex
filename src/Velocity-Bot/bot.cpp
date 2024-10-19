@@ -49,6 +49,9 @@ public:
     RedisDBManager publisher;
     std::vector<OHLCV> historicalData;
     std::vector<OHLCV> oneMinCandles;
+    bool positionOpen;
+    std::string currentPosition; 
+
 
     void initialize() override {
         try {
