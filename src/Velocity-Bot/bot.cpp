@@ -23,6 +23,7 @@
 #include "Utilities/Bar.hpp"
 #include "Utilities/OHLCV.hpp"
 #include "Utilities/Utilities.hpp"
+
 #include <thread>
 #include <chrono>
 #include <atomic>
@@ -51,6 +52,7 @@ public:
     std::vector<OHLCV> oneMinCandles;
     bool positionOpen;
     std::string currentPosition; 
+    
 
 
     void initialize() override {

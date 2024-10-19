@@ -24,6 +24,7 @@ file(GLOB_RECURSE ORDER_MANAGER_SOURCES "src/Order-Manager-Core/*.cpp")
 file(GLOB_RECURSE RISK_ANALYSIS_SOURCES "src/Risk-Analysis-Core/*.cpp")
 file(GLOB_RECURSE VELOCITY_BOT_SOURCES "src/Velocity-Bot/*.cpp")
 file(GLOB_RECURSE BACKTESTING_BOT_SOURCES "src/Backtesting-Bot/*.cpp")
+file(GLOB_RECURSE ORDERBOOK_SOURCES "src/Orderbook/*.cpp")
 file(GLOB_RECURSE UTILITY_SOURCES "src/Utilities/*.cpp")
 
 
@@ -45,6 +46,7 @@ set(SOURCES
     ${RISK_ANALYSIS_SOURCES}
     ${VELOCITY_BOT_SOURCES}
     ${BACKTESTING_BOT_SOURCES}
+    ${ORDERBOOK_SOURCES}
     ${UTILITY_SOURCES}
     src/main.cpp 
 )
