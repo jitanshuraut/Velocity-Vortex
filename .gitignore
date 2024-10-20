@@ -32,5 +32,6 @@
 *.app
 
 # Ignore build files
-/build/
+**/build/
+.vscode
 *.sh
