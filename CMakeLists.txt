@@ -9,13 +9,28 @@ include_directories(include)
 find_package(Python3 COMPONENTS Interpreter Development NumPy REQUIRED)
 
 
+
 include_directories(${Python3_INCLUDE_DIRS})
 include_directories(${Python3_NumPy_INCLUDE_DIRS})
+include_directories(${OPENSSL_INCLUDE_DIR})
+include_directories(${Boost_INCLUDE_DIRS})
+include_directories(${JSONCPP_INCLUDE_DIRS})
+
 
 find_package(CURL REQUIRED)
 find_library(HIREDIS_LIB hiredis REQUIRED)
 find_library(SQLITE3_LIB sqlite3 REQUIRED)
 find_package(jsoncpp REQUIRED)
+
+
+find_package(Threads REQUIRED)
+find_package(OpenSSL REQUIRED)
+find_package(Boost REQUIRED COMPONENTS system)
+
+
+add_library(websocketpp INTERFACE)
+target_include_directories(websocketpp INTERFACE ${CMAKE_SOURCE_DIR}/websocketpp)
+
 
 file(GLOB_RECURSE ALGO_ENGINE_SOURCES "src/AlgoEngine-Core/indicators/*.cpp")
 file(GLOB_RECURSE DATA_FETCHER_SOURCES "src/Data-Fetcher-Core/*.cpp")
@@ -61,6 +76,11 @@ target_link_libraries(VelocityVortex
     ${HIREDIS_LIB}
     ${SQLITE3_LIB}
     ${Python3_LIBRARIES}
+    websocketpp
+    Threads::Threads
+    OpenSSL::SSL
+    OpenSSL::Crypto
+    ${Boost_LIBRARIES}
 )
 
 
