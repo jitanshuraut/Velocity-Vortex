@@ -153,7 +153,7 @@ private:
                 std::to_string(latestBar.close) + ", " +
                 std::to_string(latestBar.volume) + ")";
 
-            std::string insertMessage = "INSERT INTO " + dbFileName + " VALUES " + dataToInsert + ";";
+        
             publisher.publishInsertMessage(dbFileName, dataToInsert, {channel});
 
             OHLCV currentCandle = barToOHLCV(latestBar);
