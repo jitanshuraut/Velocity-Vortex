@@ -1,146 +1,284 @@
 #include "Orderbook/order_book.hpp"
-#include <cmath>
-#include <algorithm>
-#include <sstream>
-#include <fstream>
-#include <iostream>
-#include <memory>
-#include "Orderbook/transactions.hpp"
-#include "Orderbook/order_type.hpp"
-#include "Orderbook/order_status.hpp"
-#include "Orderbook/order_orderBook.hpp"
-#include "Orderbook/limit_order.hpp"
-#include "Orderbook/order_tree.hpp"
-using std::cout;
-using std::endl;
-using std::ostringstream;
-using std::shared_ptr;
+#include <numeric>
 
-OrderTree &OrderBook::getBuyTree()
+OrderbookLevelInfos::OrderbookLevelInfos(const LevelInfos &bids, const LevelInfos &asks)
+    : bids_(bids), asks_(asks) {}
+
+const LevelInfos &OrderbookLevelInfos::GetBids() const { return bids_; }
+const LevelInfos &OrderbookLevelInfos::GetAsks() const { return asks_; }
+
+Trades_ Orderbook::AddOrder(OrderPointer order)
 {
-    return buy_tree;
-}
-
-OrderTree &OrderBook::getSellTree()
-{
-    return sell_tree;
-}
-
-OrderTree &OrderBook::getOrderTreeByOrderType(const OrderType &order_type)
-{
-
-    return (order_type == OrderType::BUY) ? buy_tree : sell_tree;
-}
-
-const int &OrderBook::getTotalOrdersSubmitted()
-{
-    return total_orders_submitted;
-}
-
-const int &OrderBook::getTotalOrdersFulfilled()
-{
-    return total_orders_submitted - (buy_tree.getLength() + sell_tree.getLength());
-}
-
-const int &OrderBook::getTotalOrdersUnfulfilled()
-{
-    return (buy_tree.getLength() + sell_tree.getLength());
-}
-
-string OrderBook::getResults()
-{
-    return output_data.str();
-}
-
-void OrderBook::processOrder(Order &incoming_order)
-{
-
-    total_orders_submitted++;
-    incoming_order.storeOrderInfo(output_data, "\033[0m");
-
-    OrderTree &matching_tree = (incoming_order.getType() == OrderType::BUY) ? sell_tree : buy_tree;
-    matching_tree.matchPriceOrder(incoming_order, output_data);
-    if (incoming_order.getStatus() == OrderStatus::FULFILLED)
+    std::unique_lock<std::mutex> lock(orderbook_mutex);
+    if (orders_.find(order->GetOrderId()) != orders_.end())
     {
-
-        incoming_order.storeOrderInfo(output_data, "\033[32m");
+        return {};
+    }
+    if (order->GetOrderType() == OrderType::FillAndKill && !CanMatch(order->GetSide(), order->GetPrice()))
+    {
+        return {};
     }
 
+    if (order->GetSide() == Side::Buy)
+    {
+        auto &orders = bids_[order->GetPrice()];
+        orders.push_back(order);
+        auto iterator = std::prev(orders.end());
+        OrderEntry entry{order, iterator};
+        orders_.emplace(order->GetOrderId(), entry);
+    }
     else
     {
-        incoming_order.setOrderStatus(OrderStatus::STORED);
-        incoming_order.storeOrderInfo(output_data, "\033[33m");
-        OrderTree &storing_tree = (incoming_order.getType() == OrderType::BUY) ? buy_tree : sell_tree;
-        storing_tree.addPriceOrder(incoming_order);
+        auto &orders = asks_[order->GetPrice()];
+        orders.push_back(order);
+        auto iterator = std::prev(orders.end());
+        OrderEntry entry{order, iterator};
+        orders_.emplace(order->GetOrderId(), entry);
     }
 
-    if (incoming_order.getID() == 75000)
-    {
-        getCurrentSnapshot();
-    }
-
-    return;
+    return MatchOrders();
 }
 
-void OrderBook::cancelOrder(const std::shared_ptr<Order> &cancel_order)
+bool Orderbook::CanMatch(Side side, Price price) const
 {
-    getOrderTreeByOrderType(cancel_order->getType()).deletePriceOrder(cancel_order);
+    std::lock_guard<std::mutex> lock(orderbook_mutex);
+
+    if (side == Side::Buy)
+    {
+        return !asks_.empty() && price >= asks_.begin()->first;
+    }
+    else
+    {
+        return !bids_.empty() && price <= bids_.begin()->first;
+    }
 }
 
-void OrderBook::getCurrentSnapshot()
+Trades_ Orderbook::MatchOrders()
 {
 
-    std::vector<std::pair<float, float>> sorted_buys(buy_tree.order_tree.begin(), buy_tree.order_tree.end());
-    std::sort(sorted_buys.begin(), sorted_buys.end(), [](const auto &b1, const auto &b2)
-              { return b1.first > b2.first; });
+    Trades_ trades;
+    trades.reserve(orders_.size());
 
-    for (size_t i = 1; i < sorted_buys.size(); ++i)
+    while (!bids_.empty() && !asks_.empty())
     {
-        sorted_buys[i].second += sorted_buys[i - 1].second;
+        auto &bid_entry = *bids_.begin();
+        auto &ask_entry = *asks_.begin();
+
+        if (bid_entry.first < ask_entry.first)
+        {
+            break;
+        }
+
+        auto &bids = bid_entry.second;
+        auto &asks = ask_entry.second;
+
+        while (!bids.empty() && !asks.empty())
+        {
+            auto &bid_order = bids.front();
+            auto &ask_order = asks.front();
+
+            auto trade_quantity = std::min(bid_order->GetRemainingQuantity(),
+                                           ask_order->GetRemainingQuantity());
+
+            if (trade_quantity > 0)
+            {
+
+                bid_order->Fill(trade_quantity);
+                ask_order->Fill(trade_quantity);
+
+                trades.push_back(Trade_{
+                    TradeInfo{bid_order->GetOrderId(), trade_quantity, bid_order->GetPrice()},
+                    TradeInfo{ask_order->GetOrderId(), trade_quantity, ask_order->GetPrice()}});
+
+                if (bid_order->IsFilled())
+                {
+                    orders_.erase(bid_order->GetOrderId());
+                    bids.pop_front();
+                }
+                if (ask_order->IsFilled())
+                {
+                    orders_.erase(ask_order->GetOrderId());
+                    asks.pop_front();
+                }
+            }
+
+            if (bids.empty())
+            {
+                bids_.erase(bid_entry.first);
+                break;
+            }
+            if (asks.empty())
+            {
+                asks_.erase(ask_entry.first);
+                break;
+            }
+        }
     }
 
-    std::ofstream out_buy_prices("output_buy_prices.txt");
-
-    for (const auto &buy : sorted_buys)
+    auto cancel_fak = [this](auto &orders_map)
     {
-        out_buy_prices << buy.first << ",";
-    }
-    out_buy_prices << std::endl;
+        if (!orders_map.empty())
+        {
+            auto &orders = orders_map.begin()->second;
+            if (!orders.empty() && orders.front()->GetOrderType() == OrderType::FillAndKill)
+            {
+                CancelOrder(orders.front()->GetOrderId());
+            }
+        }
+    };
 
-    out_buy_prices.close();
+    cancel_fak(bids_);
+    cancel_fak(asks_);
 
-    std::ofstream out_buy_sizes("output_buy_sizes.txt");
-    for (const auto &buy : sorted_buys)
-    {
-        out_buy_sizes << buy.second << ",";
-    }
-    out_buy_sizes << std::endl;
-
-    out_buy_sizes.close();
-    std::vector<std::pair<float, float>> sorted_sells(sell_tree.order_tree.begin(), sell_tree.order_tree.end());
-    std::sort(sorted_sells.begin(), sorted_sells.end(), [](const auto &b1, const auto &b2)
-              { return b1.first < b2.first; });
-
-    for (size_t i = 1; i < sorted_sells.size(); ++i)
-    {
-        sorted_sells[i].second += sorted_sells[i - 1].second;
-    }
-
-    std::ofstream out_sell_prices("output_sell_prices.txt");
-    for (const auto &sell : sorted_sells)
-    {
-        out_sell_prices << sell.first << ",";
-    }
-    out_sell_prices << std::endl;
-
-    out_sell_prices.close();
-
-    std::ofstream out_sell_sizes("output_sell_sizes.txt");
-    for (const auto &sell : sorted_sells)
-    {
-        out_sell_sizes << sell.second << ",";
-    }
-    out_sell_sizes << std::endl;
-
-    out_sell_sizes.close();
+    return trades;
 }
+
+void Orderbook::CancelOrder(OrderId orderId)
+{
+    std::lock_guard<std::mutex> lock(orderbook_mutex);
+
+    auto order_it = orders_.find(orderId);
+    if (order_it == orders_.end())
+    {
+        return;
+    }
+
+    const auto &order_entry = order_it->second;
+    const auto &order = order_entry.order_;
+
+    if (order->GetSide() == Side::Buy)
+    {
+        auto &orders = bids_[order->GetPrice()];
+        orders.erase(order_entry.location_);
+        if (orders.empty())
+        {
+            bids_.erase(order->GetPrice());
+        }
+    }
+    else
+    {
+        auto &orders = asks_[order->GetPrice()];
+        orders.erase(order_entry.location_);
+        if (orders.empty())
+        {
+            asks_.erase(order->GetPrice());
+        }
+    }
+
+    orders_.erase(orderId);
+}
+
+Trades_ Orderbook::ModifyOrder(OrderPointer order)
+{
+    std::lock_guard<std::mutex> lock(orderbook_mutex);
+
+    if (orders_.find(order->GetOrderId()) == orders_.end())
+    {
+        return {};
+    }
+
+    CancelOrder(order->GetOrderId());
+    return AddOrder(order);
+}
+
+std::size_t Orderbook::Size() const
+{
+    std::lock_guard<std::mutex> lock(orderbook_mutex);
+    return orders_.size();
+}
+
+OrderbookLevelInfos Orderbook::GetOrderInfos() const
+{
+    std::lock_guard<std::mutex> lock(orderbook_mutex);
+
+    LevelInfos bid_infos, ask_infos;
+    bid_infos.reserve(bids_.size());
+    ask_infos.reserve(asks_.size());
+
+    auto create_level_info = [](Price price, const std::list<OrderPointer> &orders)
+    {
+        Quantity total = std::accumulate(
+            orders.begin(), orders.end(), Quantity{0},
+            [](Quantity sum, const OrderPointer &order)
+            {
+                return sum + order->GetRemainingQuantity();
+            });
+        return LevelInfo{price, total};
+    };
+
+    for (const auto &[price, orders] : bids_)
+    {
+        bid_infos.push_back(create_level_info(price, orders));
+    }
+    for (const auto &[price, orders] : asks_)
+    {
+        ask_infos.push_back(create_level_info(price, orders));
+    }
+
+    return OrderbookLevelInfos(bid_infos, ask_infos);
+}
+
+std::pair<std::string, std::string> Orderbook::executeMarketMakingStrategy(int CounterId, double bid_price, double ask_price, Quantity bid_quantity, Quantity ask_quantity)
+{
+
+    {
+        std::lock_guard<std::mutex> lock(orderbook_mutex);
+        if (current_position_ >= position_limit_ && current_position_ <= -position_limit_)
+        {
+            return {"hold", ""};
+        }
+    }
+
+    double spread = ask_price - bid_price;
+
+    if (spread > spread_threshold_)
+    {
+        if (current_position_ < position_limit_)
+        {
+            double improved_bid = bid_price + spread_threshold_ / 2;
+            OrderId orderId = CounterId;
+
+            auto buy_order = std::make_shared<Order_>(
+                OrderType::GoodTillCancel,
+                orderId,
+                Side::Buy,
+                improved_bid,
+                std::min(ask_quantity, static_cast<Quantity>(100)));
+
+            auto trades = AddOrder(buy_order);
+            {
+                std::lock_guard<std::mutex> lock(orderbook_mutex);
+                current_position_ += std::min(ask_quantity, static_cast<Quantity>(100));
+            }
+
+            return {"buy", std::to_string(improved_bid)};
+        }
+
+        if (current_position_ > -position_limit_)
+        {
+            double improved_ask = ask_price - spread_threshold_ / 2;
+            CounterId++;
+            OrderId orderId = CounterId;
+            auto sell_order = std::make_shared<Order_>(
+                OrderType::GoodTillCancel,
+                orderId,
+                Side::Sell,
+                improved_ask,
+                std::min(bid_quantity, static_cast<Quantity>(100)));
+            auto trades = AddOrder(sell_order);
+            {
+                std::lock_guard<std::mutex> lock(orderbook_mutex);
+                current_position_ -= std::min(bid_quantity, static_cast<Quantity>(100));
+            }
+
+            return {"sell", std::to_string(improved_ask)};
+        }
+    }
+    return {"hold", ""};
+}
+
+void Orderbook::setSpreadThreshold(double threshold) { spread_threshold_ = threshold; }
+void Orderbook::setImbalanceThreshold(double threshold) { imbalance_threshold_ = threshold; }
+void Orderbook::setPositionLimit(int limit) { position_limit_ = limit; }
+void Orderbook::setMaxpositionsize(int siz) { max_position_size_ = siz; }
+void Orderbook::setMaxTradeSize(int max_trade_size) { max_trade_size_ = max_trade_size; }

@@ -1,42 +1,80 @@
-#ifndef ORDER_BOOK_H_
-#define ORDER_BOOK_H_
+#ifndef ORDERBOOK_H
+#define ORDERBOOK_H
 
-#include<string>
-using std::string;
-#include <sstream>
-using std::ostringstream;
+#include "./order_.hpp"
 #include "./transactions.hpp"
-#include "./order_type.hpp"
-#include "./order_status.hpp"
-#include "./order_orderBook.hpp"
-#include "./limit_order.hpp"
-#include "./order_tree.hpp"
+#include <map>
+#include <unordered_map>
+#include <list>
+#include <vector>
+#include <mutex>
+struct LevelInfo
+{
+  Price price_;
+  Quantity quantity_;
+};
+using LevelInfos = std::vector<LevelInfo>;
 
-class OrderBook {
-private:
-  OrderTree buy_tree;
-  OrderTree sell_tree;
-  ostringstream output_data;
-  int total_orders_submitted;
-
+class OrderbookLevelInfos
+{
 public:
-  OrderBook() : buy_tree(OrderType::BUY), sell_tree(OrderType::SELL), total_orders_submitted(0){};
-  OrderTree& getBuyTree();
-  OrderTree& getSellTree();
-  OrderTree& getOrderTreeByOrderType(const OrderType& order_type);
-  
-  const int& getTotalOrdersSubmitted();
-  const int& getTotalOrdersFulfilled();
-  const int& getTotalOrdersUnfulfilled();
+  OrderbookLevelInfos(const LevelInfos &bids, const LevelInfos &asks);
 
-  string getResults();
+  /**
+   * @brief Gets the bid levels information.
+   * @return Bid levels information.
+   */
+  const LevelInfos &GetBids() const;
 
-  void processOrder(Order& incoming_order);
+  /**
+   * @brief Gets the ask levels information.
+   * @return Ask levels information.
+   */
+  const LevelInfos &GetAsks() const;
 
-  void cancelOrder(const std::shared_ptr<Order>& cancel_order);
-
-  void getCurrentSnapshot();
-
+private:
+  LevelInfos bids_;
+  LevelInfos asks_;
 };
 
-#endif 
+class Orderbook
+{
+public:
+  Trades_ AddOrder(OrderPointer order);
+  void CancelOrder(OrderId orderId);
+  Trades_ ModifyOrder(OrderPointer order);
+  std::size_t Size() const;
+  OrderbookLevelInfos GetOrderInfos() const;
+  bool CanMatch(Side side, Price price) const;
+  std::pair<std::string, std::string> executeMarketMakingStrategy(int CounterId, double bid_price, double ask_price, Quantity bid_quantity, Quantity ask_quantity);
+  void setSpreadThreshold(double threshold);
+  void setImbalanceThreshold(double threshold);
+  void setPositionLimit(int limit);
+  void setMaxpositionsize(int siz);
+  void setMaxTradeSize(int max_trade_size);
+  int getCurrentPosition() const;
+
+private:
+  struct OrderEntry
+  {
+    OrderPointer order_;
+    std::list<OrderPointer>::iterator location_;
+  };
+
+  std::map<Price, std::list<OrderPointer>, std::greater<Price>> bids_;
+  std::map<Price, std::list<OrderPointer>, std::less<Price>> asks_;
+  std::unordered_map<OrderId, OrderEntry> orders_;
+  double spread_threshold_{0.02};
+  double imbalance_threshold_{0.65};
+  int position_limit_{1000};
+  int current_position_{0};
+  int max_position_size_{0};
+  int max_trade_size_{0};
+
+  std::vector<Trade_> last_trades_;
+  std::map<OrderId, double> entry_prices_;
+  mutable std::mutex orderbook_mutex;
+  Trades_ MatchOrders();
+};
+
+#endif

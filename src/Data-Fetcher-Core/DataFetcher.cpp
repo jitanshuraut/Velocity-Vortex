@@ -196,7 +196,7 @@ std::string DataFetcher::getHistoricalQuotes(const std::string& symbols, const s
     url << "https://data.alpaca.markets/v2/stocks/quotes?symbols=" << urlEncode(symbols)
         << "&start=" << urlEncode(formatRFC3339(start))
         << "&end=" << urlEncode(formatRFC3339(end))
-        << "&limit=1000&sort=asc";
+        << "&limit=10000&sort=asc";
     return makeApiRequest(url.str());
 }
 

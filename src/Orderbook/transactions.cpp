@@ -1,19 +1,7 @@
 #include "Orderbook/transactions.hpp"
-#include <vector>
-#include <string>
-using std::string;
-using std::vector;
 
+Trade_::Trade_(const TradeInfo& bidTrade, const TradeInfo& askTrade)
+    : bidTrade_{bidTrade}, askTrade_{askTrade} {}
 
-
-size_t Transactions::getLength() const {
-	return raw_orders.size();
-}
-
-size_t Transactions::getNumberOfExecutedOrders() const {
-	return getLength() / 2;
-}
-
-void Transactions::addOrder(const std::string& raw_order) {
-	raw_orders.emplace_back(raw_order);
-}
+const TradeInfo& Trade_::GetBidTrade() const { return bidTrade_; }
+const TradeInfo& Trade_::GetAskTrade() const { return askTrade_; }
