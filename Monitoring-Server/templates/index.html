@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Database File Monitor</title>
+    <link rel="stylesheet" href="static/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+    <h1>Database File Monitoring System</h1>
+
+    <select id="dbFileSelect">
+        <option value="">Select a database file to monitor</option>
+        {% for file in db_files %}
+        <option value="{{ file }}">{{ file }}</option>
+        {% endfor %}
+    </select>
+
+
+    <select id="dbFileSelect_2">
+        <option value="">Select a database file to monitor</option>
+        {% for file in db_files %}
+        <option value="{{ file }}">{{ file }}</option>
+        {% endfor %}
+    </select>
+
+    <button id="monitorBtn">Monitor</button>
+
+    <pre id="fileContent">Select a file and press Monitor to view its content.</pre>
+    <pre id="fileContent_2">Select a file and press Monitor to view its content.</pre>
+
+    <script src="static/script.js"></script>
+</body>
+
+</html>
