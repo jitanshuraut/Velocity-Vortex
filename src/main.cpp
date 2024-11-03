@@ -1,6 +1,6 @@
 #include "./Velocity-Bot/strategies/Reversal-Strategy-Fibonacci-Retracement.cpp"
 #include <chrono>
-#include "AlgoEngine-Core/Reinforcement_models/Agent_Deep_Q-Learning.hpp"
+#include "AlgoEngine-Core/Reinforcement_models/Agent_QNetwork.hpp"
 #include <thread>
 #include <iostream>
 
@@ -62,55 +62,79 @@ int main()
     // {
     //     tradingThread.join();
     // }
+    //------------------------------------------------------------------------------------------------
+    // Agent agent(
+    //     /*replay_mem_size=*/10000,
+    //     /*batch_size=*/40,
+    //     /*gamma=*/0.98,
+    //     /*eps_start=*/1.0,
+    //     /*eps_end=*/0.12,
+    //     /*eps_steps=*/300,
+    //     /*learning_rate=*/0.001,
+    //     /*input_dim=*/24,
+    //     /*action_number=*/3,
+    //     /*is_double_dqn=*/true);
 
-    Agent agent(
-        /*replay_mem_size=*/10000,
-        /*batch_size=*/40,
-        /*gamma=*/0.98,
-        /*eps_start=*/1.0,
-        /*eps_end=*/0.12,
-        /*eps_steps=*/300,
-        /*learning_rate=*/0.001,
-        /*input_dim=*/24,
-        /*action_number=*/3,
-        /*is_double_dqn=*/true);
+    // std::vector<float> episode_rewards;
+    // float epsilon = 1.0;
+    // for (int episode = 0; episode < 1000; ++episode)
+    // {
+    //     float episode_reward = 0.0;
+    //     torch::Tensor state = torch::randn({24});
+    //     for (int t = 0; t < 100; ++t)
+    //     {
+    //         torch::Tensor action = agent.select_action(state);
+    //         torch::Tensor next_state = torch::randn({24});
+    //         float action_value = action.item<float>();
+    //         float optimal_action = 1.0;
+    //         float reward_value = -std::abs(action_value - optimal_action);
+    //         torch::Tensor reward = torch::tensor({reward_value});
+    //         episode_reward += reward_value;
+    //         agent.store_transition(state, action, next_state, reward);
+    //         state = next_state;
+    //         agent.optimize_model();
+    //         bool done = (t == 99);
+    //         if (done)
+    //         {
+    //             agent.update_target_network();
+    //             break;
+    //         }
+    //     }
+    //     episode_rewards.push_back(episode_reward);
+    //     if (episode % 10 == 0)
+    //     {
+    //         float avg_reward = std::accumulate(
+    //                                episode_rewards.end() - std::min(10, (int)episode_rewards.size()),
+    //                                episode_rewards.end(), 0.0f) /
+    //                            std::min(10, (int)episode_rewards.size());
 
-    std::vector<float> episode_rewards;
-    float epsilon = 1.0;
-    for (int episode = 0; episode < 1000; ++episode)
+    //         std::cout << "Episode: " << episode
+    //                   << " | Avg Reward: " << avg_reward << std::endl;
+    //     }
+    // }
+
+    //------------------------------------------------------------------------------------------------
+
+    double alpha = 0.001;
+    double gamma = 0.99;
+    double epsilon = 1.0;
+
+    Agent agent(alpha, gamma, epsilon);
+
+    std::vector<std::vector<double>> market_data;
+    for (int i = 0; i < 10000; ++i)
     {
-        float episode_reward = 0.0;
-        torch::Tensor state = torch::randn({24});
-        for (int t = 0; t < 100; ++t)
+        std::vector<double> data(STATE_SIZE);
+        for (int j = 0; j < STATE_SIZE; ++j)
         {
-            torch::Tensor action = agent.select_action(state);
-            torch::Tensor next_state = torch::randn({24});
-            float action_value = action.item<float>();
-            float optimal_action = 1.0; 
-            float reward_value = -std::abs(action_value - optimal_action);
-            torch::Tensor reward = torch::tensor({reward_value});
-            episode_reward += reward_value;
-            agent.store_transition(state, action, next_state, reward);
-            state = next_state;
-            agent.optimize_model();
-            bool done = (t == 99);
-            if (done)
-            {
-                agent.update_target_network();
-                break;
-            }
+            data[j] = static_cast<double>(rand()) / RAND_MAX;
         }
-        episode_rewards.push_back(episode_reward);
-        if (episode % 10 == 0)
-        {
-            float avg_reward = std::accumulate(
-                                   episode_rewards.end() - std::min(10, (int)episode_rewards.size()),
-                                   episode_rewards.end(), 0.0f) /
-                               std::min(10, (int)episode_rewards.size());
-
-            std::cout << "Episode: " << episode
-                      << " | Avg Reward: " << avg_reward << std::endl;
-        }
+        market_data.push_back(data);
     }
+
+    double total_balance = 1000.0;
+    agent.train(market_data, total_balance);
+    std::cout << "Final Balance: " << total_balance << std::endl;
+
     return 0;
 }
