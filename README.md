@@ -6,7 +6,7 @@ Welcome to the Velocity-Vortex: Where Every Millisecond Counts. 🚀
 ## Project Features
 
 1. **High-Speed Trade Execution**  
-  Capable of executing trades at lightning-fast speeds, leaving Python and heavyweight JavaScript 
+   Capable of executing trades at lightning-fast speeds, leaving Python and heavyweight JavaScript.
 
 2. **Comprehensive Indicator Library**  
    Includes a library of technical indicators to streamline strategy development.
@@ -34,6 +34,11 @@ Welcome to the Velocity-Vortex: Where Every Millisecond Counts. 🚀
 
 10. **Multi-Threaded Execution**  
     Leverages multi-threading for optimized, parallel processing.
+    
+11. **Statistical and Reinforcement Learning Models**  
+    Includes basic statistical models and reinforcement learning algorithms for better decision-making and strategy improvement.
+
+
 
 
 ## File Descriptions
