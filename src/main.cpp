@@ -1,5 +1,6 @@
 #include "./Velocity-Bot/strategies/Reversal-Strategy-Fibonacci-Retracement.cpp"
 #include <chrono>
+#include "AlgoEngine-Core/Reinforcement_models/Agent_Deep_Q-Learning.hpp"
 #include <thread>
 #include <iostream>
 
@@ -34,33 +35,82 @@ int main()
 
     // For candle-based bots
 
-    Reversal_Fibonacci_Retracement tradingBot;
+    // Reversal_Fibonacci_Retracement tradingBot;
 
-    try
+    // try
+    // {
+    //     tradingBot.initialize();
+    // }
+    // catch (const std::exception &e)
+    // {
+    //     std::cerr << "Error during initialization: " << e.what() << std::endl;
+    //     return 1;
+    // }
+
+    // std::thread tradingThread([&tradingBot]()
+    //                           {
+    //     try {
+    //         tradingBot.run();
+    //     } catch (const std::exception& e) {
+    //         std::cerr << "Error during run: " << e.what() << std::endl;
+    //     } });
+
+    // std::this_thread::sleep_for(std::chrono::minutes(10));
+    // tradingBot.stop();
+
+    // if (tradingThread.joinable())
+    // {
+    //     tradingThread.join();
+    // }
+
+    Agent agent(
+        /*replay_mem_size=*/10000,
+        /*batch_size=*/40,
+        /*gamma=*/0.98,
+        /*eps_start=*/1.0,
+        /*eps_end=*/0.12,
+        /*eps_steps=*/300,
+        /*learning_rate=*/0.001,
+        /*input_dim=*/24,
+        /*action_number=*/3,
+        /*is_double_dqn=*/true);
+
+    std::vector<float> episode_rewards;
+    float epsilon = 1.0;
+    for (int episode = 0; episode < 1000; ++episode)
     {
-        tradingBot.initialize();
+        float episode_reward = 0.0;
+        torch::Tensor state = torch::randn({24});
+        for (int t = 0; t < 100; ++t)
+        {
+            torch::Tensor action = agent.select_action(state);
+            torch::Tensor next_state = torch::randn({24});
+            float action_value = action.item<float>();
+            float optimal_action = 1.0; 
+            float reward_value = -std::abs(action_value - optimal_action);
+            torch::Tensor reward = torch::tensor({reward_value});
+            episode_reward += reward_value;
+            agent.store_transition(state, action, next_state, reward);
+            state = next_state;
+            agent.optimize_model();
+            bool done = (t == 99);
+            if (done)
+            {
+                agent.update_target_network();
+                break;
+            }
+        }
+        episode_rewards.push_back(episode_reward);
+        if (episode % 10 == 0)
+        {
+            float avg_reward = std::accumulate(
+                                   episode_rewards.end() - std::min(10, (int)episode_rewards.size()),
+                                   episode_rewards.end(), 0.0f) /
+                               std::min(10, (int)episode_rewards.size());
+
+            std::cout << "Episode: " << episode
+                      << " | Avg Reward: " << avg_reward << std::endl;
+        }
     }
-    catch (const std::exception &e)
-    {
-        std::cerr << "Error during initialization: " << e.what() << std::endl;
-        return 1;
-    }
-
-    std::thread tradingThread([&tradingBot]()
-                              {
-        try {
-            tradingBot.run(); 
-        } catch (const std::exception& e) {
-            std::cerr << "Error during run: " << e.what() << std::endl;
-        } });
-
-    std::this_thread::sleep_for(std::chrono::minutes(10));
-    tradingBot.stop();
-
-    if (tradingThread.joinable())
-    {
-        tradingThread.join();
-    }
-
     return 0;
 }
