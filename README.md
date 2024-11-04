@@ -110,6 +110,7 @@ The project depends on several libraries, including:
 <img src="https://github.com/user-attachments/assets/1f05e4b2-1ba0-4c13-93e8-faa1d95ac0f8" alt="Algo-Bot" width="500" />
 
 # Algo-Bot Process
-![diagram-export-11-3-2024-2_34_39-PM](https://github.com/user-attachments/assets/4be81869-0b3d-455a-82b8-2f6ddac3c60d)
+![diagram-export-11-4-2024-7_21_38-PM](https://github.com/user-attachments/assets/c2ca91de-0658-4140-a81a-ef4048ae7627)
+
 
 
