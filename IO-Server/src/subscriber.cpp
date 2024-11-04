@@ -6,6 +6,8 @@
 #include <hiredis/hiredis.h>
 #include <sqlite3.h>
 #include <filesystem>
+#include <spdlog/spdlog.h>
+#include <spdlog/sinks/basic_file_sink.h>
 
 void executeSQL(const std::string &dbPath, const std::string &sqlCommand)
 {
@@ -50,7 +52,7 @@ int main()
 
     std::cout << "Connected to Redis server" << std::endl;
 
-    std::vector<std::string> channels = {"AAPL"};
+    std::vector<std::string> channels = {"AAPL", "Log"};
 
     for (const auto &channel : channels)
     {
@@ -66,6 +68,7 @@ int main()
     }
 
     std::cout << "Waiting for messages..." << std::endl;
+    auto logger = spdlog::basic_logger_mt("Velocity-Vortex", "logs/logfile.log");
 
     while (true)
     {
@@ -103,14 +106,18 @@ int main()
                         std::cout << insertSQL << std::endl;
                         executeSQL(dbPath, insertSQL);
                     }
-
-                    std::cout << "Received message from " << channel << ": " << message << std::endl;
+                    else if (operation == "LOG")
+                    {
+                        std::string logMessage = "Logging message: " + sqlCommand;
+                        std::cout << logMessage << std::endl;
+                        logger->info(logMessage);
+                        std::cout << "Received message from " << channel << ": " << message << std::endl;
+                    }
                 }
+                freeReplyObject(reply);
             }
-            freeReplyObject(reply);
         }
     }
-
     redisFree(c);
     return 0;
 }

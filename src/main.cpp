@@ -2,11 +2,19 @@
 #include <chrono>
 #include "AlgoEngine-Core/Reinforcement_models/Agent_QNetwork.hpp"
 #include <thread>
+#include "Utilities/Logger.hpp"
 #include <iostream>
 
 int main()
 {
+    auto logger = Logger::getInstance();
+    logger->publishLogMessage("Trading engine starting...", {"Log"});
+
     // ----------------------------------------------------------------------------------------------
+
+    //   logger->publishLogMessage("starting Testing 1",{"Log"});
+    //   logger->publishLogMessage("starting Testing 2",{"Log"});
+    //   logger->publishLogMessage("starting Testing 3",{"Log"});
 
     // For WebSocket-based bots
 
@@ -63,6 +71,7 @@ int main()
     //     tradingThread.join();
     // }
     //------------------------------------------------------------------------------------------------
+
     // Agent agent(
     //     /*replay_mem_size=*/10000,
     //     /*batch_size=*/40,

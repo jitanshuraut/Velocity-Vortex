@@ -6,21 +6,22 @@
 #include <hiredis/hiredis.h>
 #include <string>
 
-class RedisDBManager {
+class RedisDBManager
+{
 public:
-    RedisDBManager(const std::string& host = "127.0.0.1", int port = 6379);
+    RedisDBManager(const std::string &host = "127.0.0.1", int port = 6379);
     ~RedisDBManager();
 
     bool connect();
-    void publishCreateMessage(const std::string& dbFileName, const std::string& sqlStructure, const std::vector<std::string>& channels);
-    void publishInsertMessage(const std::string& dbFileName, const std::string& dataToInsert, const std::vector<std::string>& channels);
-
-private:
-    redisContext* context;
+    void publishCreateMessage(const std::string &dbFileName, const std::string &sqlStructure, const std::vector<std::string> &channels);
+    void publishInsertMessage(const std::string &dbFileName, const std::string &dataToInsert, const std::vector<std::string> &channels);
+    void publishLogMessage(const std::string &dataToInsert, const std::vector<std::string> &channels);
+    
+    private : redisContext *context;
     std::string host;
     int port;
 
-    bool publishMessage(const std::string& channel, const std::string& message);
+    bool publishMessage(const std::string &channel, const std::string &message);
 };
 
-#endif 
+#endif
