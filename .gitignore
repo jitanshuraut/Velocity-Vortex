@@ -33,5 +33,6 @@
 
 # Ignore build files
 **/build/
+**/node_modules/
 .vscode
 *.sh
