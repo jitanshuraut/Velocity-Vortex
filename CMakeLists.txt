@@ -1,92 +1,3 @@
-# cmake_minimum_required(VERSION 3.15)
-# project(VelocityVortex)
-
-# set(CMAKE_CXX_STANDARD 20)
-# set(CMAKE_CXX_STANDARD_REQUIRED True)
-# set(CMAKE_PREFIX_PATH "/usr/local/libtorch")
-
-
-# find_package(Torch REQUIRED)
-# include_directories(include)
-# find_package(Python3 COMPONENTS Interpreter Development NumPy REQUIRED)
-
-# include_directories(${Python3_INCLUDE_DIRS})
-# include_directories(${Python3_NumPy_INCLUDE_DIRS})
-
-
-# find_package(OpenSSL REQUIRED)
-# find_package(Boost REQUIRED COMPONENTS system)
-# find_package(jsoncpp REQUIRED)
-# find_package(CURL REQUIRED)
-
-
-# find_library(HIREDIS_LIB hiredis REQUIRED)
-# find_library(SQLITE3_LIB sqlite3 REQUIRED)
-# find_package(Threads REQUIRED)
-
-
-# add_library(websocketpp INTERFACE)
-# target_include_directories(websocketpp INTERFACE ${CMAKE_SOURCE_DIR}/websocketpp)
-
-
-# file(GLOB_RECURSE ALGO_ENGINE_SOURCES "src/AlgoEngine-Core/**/*.cpp")
-# file(GLOB_RECURSE DATA_FETCHER_SOURCES "src/Data-Fetcher-Core/*.cpp")
-# file(GLOB_RECURSE IO_BROKER_SOURCES "src/IO-Broker-Core/*.cpp")
-# file(GLOB_RECURSE ORDER_MANAGER_SOURCES "src/Order-Manager-Core/*.cpp")
-# file(GLOB_RECURSE RISK_ANALYSIS_SOURCES "src/Risk-Analysis-Core/*.cpp")
-# file(GLOB_RECURSE VELOCITY_BOT_SOURCES "src/Velocity-Bot/*.cpp")
-# file(GLOB_RECURSE BACKTESTING_BOT_SOURCES "src/Backtesting-Bot/*.cpp")
-# file(GLOB_RECURSE ORDERBOOK_SOURCES "src/Orderbook/*.cpp")
-# file(GLOB_RECURSE UTILITY_SOURCES "src/Utilities/*.cpp")
-
-
-# set(UTILITIES_SOURCES
-#     include/Utilities/Bar.hpp
-#     include/Utilities/OHLCV.hpp
-#     include/Utilities/Quote.hpp
-#     include/Utilities/SignalResult.hpp
-#     include/Utilities/Trade.hpp
-#     include/Utilities/Utilities.hpp
-# )
-
-
-# set(SOURCES
-#     ${ALGO_ENGINE_SOURCES}
-#     ${DATA_FETCHER_SOURCES}
-#     ${IO_BROKER_SOURCES}
-#     ${ORDER_MANAGER_SOURCES}
-#     ${RISK_ANALYSIS_SOURCES}
-#     ${VELOCITY_BOT_SOURCES}
-#     ${BACKTESTING_BOT_SOURCES}
-#     ${ORDERBOOK_SOURCES}
-#     ${UTILITY_SOURCES}
-#     src/main.cpp  
-# )
-
-
-# add_executable(VelocityVortex ${SOURCES})
-
-
-# target_link_libraries(VelocityVortex
-#     ${TORCH_LIBRARIES}
-#     CURL::libcurl
-#     jsoncpp_lib
-#     ${HIREDIS_LIB}
-#     ${SQLITE3_LIB}
-#     ${Python3_LIBRARIES}
-#     websocketpp
-#     Threads::Threads
-#     OpenSSL::SSL
-#     OpenSSL::Crypto
-#     ${Boost_LIBRARIES}
-# )
-
-
-# set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/..)
-
-# set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${TORCH_CXX_FLAGS}")
-
-
 cmake_minimum_required(VERSION 3.15)
 project(VelocityVortex
         VERSION 1.0.0
@@ -99,8 +10,9 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-
+find_package(ZeroMQ QUIET)
 include(CheckIPOSupported)
+include_directories(${ZeroMQ_INCLUDE_DIRS})
 check_ipo_supported(RESULT IPO_SUPPORTED)
 if(IPO_SUPPORTED)
     set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
@@ -204,6 +116,7 @@ target_link_libraries(${PROJECT_NAME}
         OpenSSL::SSL
         OpenSSL::Crypto
         ${Boost_LIBRARIES}
+        ${ZeroMQ_LIBRARIES}
 )
 
 
@@ -220,6 +133,35 @@ if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.16)
         <unordered_map>
     )
 endif()
+
+# Add support for CodeQL
+if(DEFINED ENV{CODEQL_EXTRACTOR_CXX_TRACER_CONFIGURATION})
+    message(STATUS "CodeQL build detected")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 -g")
+endif()
+
+# Ensure all required libraries are installed
+include(ExternalProject)
+ExternalProject_Add(
+    hiredis
+    GIT_REPOSITORY https://github.com/redis/hiredis.git
+    GIT_TAG v1.0.0
+    CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${CMAKE_BINARY_DIR}/hiredis
+)
+ExternalProject_Add(
+    sqlite3
+    GIT_REPOSITORY https://github.com/sqlite/sqlite.git
+    GIT_TAG version-3.35.5
+    CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${CMAKE_BINARY_DIR}/sqlite3
+)
+
+# Link the installed libraries
+add_dependencies(${PROJECT_NAME} hiredis sqlite3)
+target_link_libraries(${PROJECT_NAME}
+    PRIVATE
+        ${CMAKE_BINARY_DIR}/hiredis/lib/libhiredis.a
+        ${CMAKE_BINARY_DIR}/sqlite3/lib/libsqlite3.a
+)
 
 install(TARGETS ${PROJECT_NAME}
     RUNTIME DESTINATION bin
