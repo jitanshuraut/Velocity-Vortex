@@ -63,7 +63,7 @@ public:
         publisher.connect();
         try
         {
-            std::string jsonResponseBars = fetcher.getHistoricalBars("AAPL", "15Min", "2024-05-01", "2024-10-25");
+            std::string jsonResponseBars = fetcher.getHistoricalBars("AAPL", "1Min", "2024-10-01", "2024-10-25");
             std::vector<Bar> Bars = fetcher.parseHistoricalBars(jsonResponseBars, "AAPL");
 
             for (const auto &bar : Bars)
@@ -156,7 +156,7 @@ private:
             OHLCV currentCandle = barToOHLCV(latestBar);
             oneMinCandles.push_back(currentCandle);
 
-            if (oneMinCandles.size() == 3)
+            if (oneMinCandles.size() == 2)
             {
                 OHLCV fiveMinCandle = buildAggregatedCandle(oneMinCandles);
                 oneMinCandles.clear();

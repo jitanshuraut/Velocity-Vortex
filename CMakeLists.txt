@@ -10,7 +10,14 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-find_package(ZeroMQ QUIET)
+find_library(ZMQ_LIB zmq REQUIRED)
+find_path(ZMQ_INCLUDE_DIR zmq.hpp
+    PATHS
+        /usr/local/include
+        /usr/include
+    REQUIRED
+)
+
 include(CheckIPOSupported)
 include_directories(${ZeroMQ_INCLUDE_DIRS})
 check_ipo_supported(RESULT IPO_SUPPORTED)
@@ -101,6 +108,7 @@ target_include_directories(${PROJECT_NAME}
         ${CMAKE_SOURCE_DIR}/include
         ${Python3_INCLUDE_DIRS}
         ${Python3_NumPy_INCLUDE_DIRS}
+        ${ZMQ_INCLUDE_DIR}
 )
 
 target_link_libraries(${PROJECT_NAME}
@@ -116,7 +124,7 @@ target_link_libraries(${PROJECT_NAME}
         OpenSSL::SSL
         OpenSSL::Crypto
         ${Boost_LIBRARIES}
-        ${ZeroMQ_LIBRARIES}
+        ${ZMQ_LIB}
 )
 
 

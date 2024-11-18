@@ -112,17 +112,21 @@ public:
         {
             try
             {
-                auto marketClockInfo = orderManager.getMarketInfo();
+                // auto marketClockInfo = orderManager.getMarketInfo();
+                // for(auto x:marketClockInfo)
+                // {
+                //     std::cout<<x.first<<" : "<<x.second<<std::endl;
+                // }
 
-                if (marketClockInfo["is_open"] == "true")
-                {
+                // if (marketClockInfo["is_open"] == "true")
+                // {
                     processTrading();
-                }
-                else
-                {
-                    std::cout << "Market is closed. Next open time: " << marketClockInfo["next_open"] << std::endl;
-                    std::this_thread::sleep_for(std::chrono::seconds(60));
-                }
+                // }
+                // else
+                // {
+                //     std::cout << "Market is closed. Next open time: " << marketClockInfo["next_open"] << std::endl;
+                //     std::this_thread::sleep_for(std::chrono::seconds(60));
+                // }
             }
             catch (const std::exception &e)
             {
@@ -164,7 +168,7 @@ private:
             OHLCV currentCandle = barToOHLCV(latestBar);
             oneMinCandles.push_back(currentCandle);
 
-            if (oneMinCandles.size() == 3)
+            if (oneMinCandles.size() == 1)
             {
                 OHLCV fiveMinCandle = buildAggregatedCandle(oneMinCandles);
                 oneMinCandles.clear();
@@ -177,7 +181,7 @@ private:
                 executeTradingLogic();
             }
         }
-        std::this_thread::sleep_for(std::chrono::seconds(35));
+        std::this_thread::sleep_for(std::chrono::seconds(3));
     }
 
     void executeTradingLogic()
@@ -194,8 +198,6 @@ private:
         std::cout << "EMA: " << EMA << std::endl;
         std::cout << "SMA: " << SMA << std::endl;
         std::cout << "ADX: " << ADX << std::endl;
-        std::cout << "Position Open: " << positionOpen << std::endl;
-        std::cout << "Current Position: " << currentPosition << std::endl;
         std::cout << "----------------------------------" << std::endl;
 
         if (!positionOpen && EMA > SMA && ADX > 25)

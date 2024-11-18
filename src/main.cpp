@@ -1,4 +1,4 @@
-#include "./Velocity-Bot/strategies/Reversal-Strategy-Fibonacci-Retracement.cpp"
+#include "./Velocity-Bot/strategies/Trend-Following-Strategy.cpp"
 #include <chrono>
 #include "AlgoEngine-Core/Reinforcement_models/Agent_QNetwork.hpp"
 #include <thread>
@@ -43,33 +43,33 @@ int main()
 
     // For candle-based bots
 
-    // Reversal_Fibonacci_Retracement tradingBot;
+    BOT_Trend_Following tradingBot;
 
-    // try
-    // {
-    //     tradingBot.initialize();
-    // }
-    // catch (const std::exception &e)
-    // {
-    //     std::cerr << "Error during initialization: " << e.what() << std::endl;
-    //     return 1;
-    // }
+    try
+    {
+        tradingBot.initialize();
+    }
+    catch (const std::exception &e)
+    {
+        std::cerr << "Error during initialization: " << e.what() << std::endl;
+        return 1;
+    }
 
-    // std::thread tradingThread([&tradingBot]()
-    //                           {
-    //     try {
-    //         tradingBot.run();
-    //     } catch (const std::exception& e) {
-    //         std::cerr << "Error during run: " << e.what() << std::endl;
-    //     } });
+    std::thread tradingThread([&tradingBot]()
+                              {
+        try {
+            tradingBot.run();
+        } catch (const std::exception& e) {
+            std::cerr << "Error during run: " << e.what() << std::endl;
+        } });
 
-    // std::this_thread::sleep_for(std::chrono::minutes(10));
-    // tradingBot.stop();
+    std::this_thread::sleep_for(std::chrono::minutes(10));
+    tradingBot.stop();
 
-    // if (tradingThread.joinable())
-    // {
-    //     tradingThread.join();
-    // }
+    if (tradingThread.joinable())
+    {
+        tradingThread.join();
+    }
     //------------------------------------------------------------------------------------------------
 
     // Agent agent(
@@ -124,26 +124,26 @@ int main()
 
     //------------------------------------------------------------------------------------------------
 
-    double alpha = 0.001;
-    double gamma = 0.99;
-    double epsilon = 1.0;
+    // double alpha = 0.001;
+    // double gamma = 0.99;
+    // double epsilon = 1.0;
 
-    Agent agent(alpha, gamma, epsilon);
+    // Agent agent(alpha, gamma, epsilon);
 
-    std::vector<std::vector<double>> market_data;
-    for (int i = 0; i < 10000; ++i)
-    {
-        std::vector<double> data(STATE_SIZE);
-        for (int j = 0; j < STATE_SIZE; ++j)
-        {
-            data[j] = static_cast<double>(rand()) / RAND_MAX;
-        }
-        market_data.push_back(data);
-    }
+    // std::vector<std::vector<double>> market_data;
+    // for (int i = 0; i < 10000; ++i)
+    // {
+    //     std::vector<double> data(STATE_SIZE);
+    //     for (int j = 0; j < STATE_SIZE; ++j)
+    //     {
+    //         data[j] = static_cast<double>(rand()) / RAND_MAX;
+    //     }
+    //     market_data.push_back(data);
+    // }
 
-    double total_balance = 1000.0;
-    agent.train(market_data, total_balance);
-    std::cout << "Final Balance: " << total_balance << std::endl;
+    // double total_balance = 1000.0;
+    // agent.train(market_data, total_balance);
+    // std::cout << "Final Balance: " << total_balance << std::endl;
 
     return 0;
 }
