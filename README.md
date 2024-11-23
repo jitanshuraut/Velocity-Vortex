@@ -2,7 +2,8 @@
 ```
 Welcome to the Velocity-Vortex: Where Every Millisecond Counts. 🚀
 ```
-
+# Algo-Bot Process (V2.0.0) [On-going]
+![diagram-export-11-18-2024-6_15_58-PM](https://github.com/user-attachments/assets/543d28cf-4080-4cc0-9308-3bc7747bd32d)
 ## Project Features
 
 1. **High-Speed Trade Execution**  
@@ -109,8 +110,9 @@ The project depends on several libraries, including:
 # Algo-Bot
 <img src="https://github.com/user-attachments/assets/1f05e4b2-1ba0-4c13-93e8-faa1d95ac0f8" alt="Algo-Bot" width="500" />
 
-# Algo-Bot Process
+# Algo-Bot Process (V1.8.0)
 ![diagram-export-11-5-2024-10_21_56-PM](https://github.com/user-attachments/assets/c1867a5f-e0b3-44b1-8cf2-4ba34a1f54fb)
+
 
 
 
