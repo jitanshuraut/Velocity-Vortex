@@ -14,7 +14,7 @@ void Asychronous_publisher(DataFetcher &provider, const std::string &symbols, co
     std::string data = "";
     for (auto x : bars)
     {
-        data += "open-" + std::to_string(x.open);
+        data += " open-" + std::to_string(x.open)+" ";
     }
     std::string info = "Author - " + provider.GetProvider_name() + " About - " + symbols + " " + timeframe + " " + start + " " + end;
     provider.publish(data, info);
@@ -38,30 +38,30 @@ void runWebSocket(const std::string &provider_name, const char *host, const char
 int main()
 {
 
-    // Alapca provider1(std :: getenv("APCA_API_KEY_ID"), std :: getenv("APCA_API_SECRET_KEY"), 5567, "Alpaca");
-    // provider1. initialize();
+    Alapca provider1(std ::getenv("APCA_API_KEY_ID"), std ::getenv("APCA_API_SECRET_KEY"), 5567, "Alpaca");
+    provider1.initialize();
 
-    // Ploygon provider2(std :: getenv("APCA_API_KEY_ID"), std :: getenv("APCA_API_SECRET_KEY"), 5568, "Ploygon");
-    // provider2. initialize();
+    Ploygon provider2(std ::getenv("APCA_API_KEY_ID"), std ::getenv("APCA_API_SECRET_KEY"), 5568, "Ploygon");
+    provider2.initialize();
 
-    // TwelveData provider3(std :: getenv("APCA_API_KEY_ID"), std :: getenv("APCA_API_SECRET_KEY"), 5569, "TwelveData")
-    // provider3. initialize();
+    TwelveData provider3(std ::getenv("APCA_API_KEY_ID"), std ::getenv("APCA_API_SECRET_KEY"), 5569, "TwelveData");
+    provider3.initialize();
 
-    // std :: thread thread1(Asychronous_publisher, std: :ref(provider1), "AAPL", "1Day", "2023-01-01", "2023-01-31");
-    // std :: thread thread2(Asychronous_publisher, std: :ref(provider2), "AAPL", "1Day", "2023-01-01", "2023-01-31");
-    // std :: thread thread3(Asychronous_publisher, std :: ref(provider3), "AAPL", "1Day", "2023-01-01", "2023-01-31");
-
-    // thread1.detach();
-    // thread2.detach();
-    // thread3.detach();
-
-    std::thread thread1(runWebSocket, "Alpaca", "stream.data.alpaca.markets", "443", "", "AAPL");
-    std::thread thread2(runWebSocket, "Polygon", "stream.data.alpaca.markets", "443", "", "AAPL");
-    std::thread thread3(runWebSocket, "TwelveData", "stream.data.alpaca.markets", "443", "", "AAPL");
+    std::thread thread1(Asychronous_publisher, std::ref(provider1), "AAPL", "1Day", "2023-01-01", "2023-01-31");
+    std::thread thread2(Asychronous_publisher, std::ref(provider2), "AAPL", "1Day", "2023-01-01", "2023-01-31");
+    std::thread thread3(Asychronous_publisher, std::ref(provider3), "AAPL", "1Day", "2023-01-01", "2023-01-31");
 
     thread1.detach();
     thread2.detach();
     thread3.detach();
+
+    // std::thread thread1(runWebSocket, "Alpaca", "stream.data.alpaca.markets", "443", "", "AAPL");
+    // std::thread thread2(runWebSocket, "Polygon", "stream.data.alpaca.markets", "443", "", "AAPL");
+    // std::thread thread3(runWebSocket, "TwelveData", "stream.data.alpaca.markets", "443", "", "AAPL");
+
+    // thread1.detach();
+    // thread2.detach();
+    // thread3.detach();
 
     // Keep the main thread alive to allow detached threads to run
     std::this_thread::sleep_for(std::chrono::hours(1));

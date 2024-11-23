@@ -4,9 +4,11 @@
 #include <thread>
 #include "Utilities/Logger.hpp"
 #include <iostream>
+#include "Data-Fetcher-Core/DataFetcher-Sub.hpp"
 
 int main()
 {
+   
     auto logger = Logger::getInstance();
     logger->publishLogMessage("Trading engine starting...", {"Log"});
 
@@ -43,33 +45,33 @@ int main()
 
     // For candle-based bots
 
-    BOT_Trend_Following tradingBot;
+    // BOT_Trend_Following tradingBot;
 
-    try
-    {
-        tradingBot.initialize();
-    }
-    catch (const std::exception &e)
-    {
-        std::cerr << "Error during initialization: " << e.what() << std::endl;
-        return 1;
-    }
+    // try
+    // {
+    //     tradingBot.initialize();
+    // }
+    // catch (const std::exception &e)
+    // {
+    //     std::cerr << "Error during initialization: " << e.what() << std::endl;
+    //     return 1;
+    // }
 
-    std::thread tradingThread([&tradingBot]()
-                              {
-        try {
-            tradingBot.run();
-        } catch (const std::exception& e) {
-            std::cerr << "Error during run: " << e.what() << std::endl;
-        } });
+    // std::thread tradingThread([&tradingBot]()
+    //                           {
+    //     try {
+    //         tradingBot.run();
+    //     } catch (const std::exception& e) {
+    //         std::cerr << "Error during run: " << e.what() << std::endl;
+    //     } });
 
-    std::this_thread::sleep_for(std::chrono::minutes(10));
-    tradingBot.stop();
+    // std::this_thread::sleep_for(std::chrono::minutes(10));
+    // tradingBot.stop();
 
-    if (tradingThread.joinable())
-    {
-        tradingThread.join();
-    }
+    // if (tradingThread.joinable())
+    // {
+    //     tradingThread.join();
+    // }
     //------------------------------------------------------------------------------------------------
 
     // Agent agent(

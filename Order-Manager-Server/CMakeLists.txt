@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.15)
-project(VelocityVortex
+project(OrderManager
         VERSION 1.0.0
         DESCRIPTION "High-frequency trading system"
         LANGUAGES CXX)
@@ -50,15 +50,10 @@ endif()
 
 
 set(SOURCE_GROUPS
-    "AlgoEngine-Core"
-    "Data-Fetcher-Core"
-    "IO-Broker-Core"
-    "Order-Manager-Core"
-    "Risk-Analysis-Core"
-    "Velocity-Bot"
-    "Backtesting-Bot"
-    "Orderbook"
-    "Utilities"
+    ""
+    "Executor-Manager-Core"
+    "Queue"
+    "Scheduler"
 )
 
 
@@ -80,46 +75,24 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 
 
-set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} "/usr/local/libtorch")
-find_package(Torch REQUIRED)
-find_package(Python3 COMPONENTS Interpreter Development NumPy REQUIRED)
+
 find_package(OpenSSL REQUIRED)
 find_package(Boost REQUIRED COMPONENTS system)
 find_package(jsoncpp REQUIRED)
 find_package(CURL REQUIRED)
 find_package(Threads REQUIRED)
 
-
-
-find_library(HIREDIS_LIB hiredis REQUIRED)
-find_library(SQLITE3_LIB sqlite3 REQUIRED)
-
-
-
-add_library(websocketpp INTERFACE)
-target_include_directories(websocketpp 
-    INTERFACE 
-    ${CMAKE_SOURCE_DIR}/websocketpp
-)
-
-
 target_include_directories(${PROJECT_NAME}
     PRIVATE
         ${CMAKE_SOURCE_DIR}/include
-        ${Python3_INCLUDE_DIRS}
-        ${Python3_NumPy_INCLUDE_DIRS}
         ${ZMQ_INCLUDE_DIR}
 )
 
 target_link_libraries(${PROJECT_NAME}
     PRIVATE
-        ${TORCH_LIBRARIES}
+    
         CURL::libcurl
         jsoncpp_lib
-        ${HIREDIS_LIB}
-        ${SQLITE3_LIB}
-        ${Python3_LIBRARIES}
-        websocketpp
         Threads::Threads
         OpenSSL::SSL
         OpenSSL::Crypto
