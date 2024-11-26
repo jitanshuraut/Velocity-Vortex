@@ -113,6 +113,10 @@ The project depends on several libraries, including:
 # Algo-Bot Process (V1.8.0)
 ![diagram-export-11-5-2024-10_21_56-PM](https://github.com/user-attachments/assets/c1867a5f-e0b3-44b1-8cf2-4ba34a1f54fb)
 
+# Class and Functions
+![diagram-export-11-26-2024-12_23_06-AM](https://github.com/user-attachments/assets/ccc0983a-3f06-47c9-9773-fcde0328f109)
+
+
 
 
 
