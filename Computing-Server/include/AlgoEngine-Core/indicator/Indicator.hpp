@@ -26,7 +26,6 @@ public:
     void addData(const OHLCV &data)
     {
         historicalData.push_back(data);
-       
     }
 
     virtual SignalResult calculateSignal() = 0;
@@ -60,9 +59,5 @@ public:
             SignalResult signal = calculateSignal();
             signals.push_back(signal);
         }
-    }
-
-    void logComputation() const
-    {
     }
 };

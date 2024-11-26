@@ -1,10 +1,16 @@
 #include "WebSockets/Sockets.hpp"
 
+// Constructor for WebSocket class
 WebSocket::WebSocket(net::io_context &ioc, ssl::context &ctx, const std::string &provider_name)
-    : resolver_(net::make_strand(ioc)), ws_(net::make_strand(ioc), ctx), connected_(false), authenticated_(false), reading_(false), stop_reading_(false), provider_name(provider_name)
-{
-}
+    : resolver_(net::make_strand(ioc)),
+      ws_(net::make_strand(ioc), ctx),
+      connected_(false),
+      authenticated_(false),
+      reading_(false),
+      stop_reading_(false),
+      provider_name(provider_name) {}
 
+// Destructor for WebSocket class
 WebSocket::~WebSocket()
 {
     stop_reading_ = true;
@@ -15,6 +21,8 @@ WebSocket::~WebSocket()
     }
 }
 
+// Initiates the WebSocket connection
+// Inputs: host - server host, port - server port, text - message text, stock_ - stock symbol, provider_name - name of the provider
 void WebSocket::run(const char *host, const char *port, const char *text, std::string stock_, const std::string &provider_name)
 {
     host_ = host;
@@ -23,13 +31,12 @@ void WebSocket::run(const char *host, const char *port, const char *text, std::s
     this->provider_name = provider_name;
 
     resolver_.async_resolve(
-        host,
-        port,
-        beast::bind_front_handler(
-            &WebSocket::on_resolve,
-            shared_from_this()));
+        host, port,
+        beast::bind_front_handler(&WebSocket::on_resolve, shared_from_this()));
 }
 
+// Handles the resolution of the host and port
+// Inputs: ec - error code, results - resolved endpoints
 void WebSocket::on_resolve(beast::error_code ec, tcp::resolver::results_type results)
 {
     if (ec)
@@ -42,11 +49,11 @@ void WebSocket::on_resolve(beast::error_code ec, tcp::resolver::results_type res
 
     beast::get_lowest_layer(ws_).async_connect(
         results,
-        beast::bind_front_handler(
-            &WebSocket::on_connect,
-            shared_from_this()));
+        beast::bind_front_handler(&WebSocket::on_connect, shared_from_this()));
 }
 
+// Handles the connection to the server
+// Inputs: ec - error code, ep - endpoint type
 void WebSocket::on_connect(beast::error_code ec, tcp::resolver::results_type::endpoint_type ep)
 {
     if (ec)
@@ -68,11 +75,11 @@ void WebSocket::on_connect(beast::error_code ec, tcp::resolver::results_type::en
 
     ws_.next_layer().async_handshake(
         ssl::stream_base::client,
-        beast::bind_front_handler(
-            &WebSocket::on_ssl_handshake,
-            shared_from_this()));
+        beast::bind_front_handler(&WebSocket::on_ssl_handshake, shared_from_this()));
 }
 
+// Handles the SSL handshake
+// Inputs: ec - error code
 void WebSocket::on_ssl_handshake(beast::error_code ec)
 {
     if (ec)
@@ -92,11 +99,11 @@ void WebSocket::on_ssl_handshake(beast::error_code ec)
         }));
 
     ws_.async_handshake(host_, "/v2/iex",
-                        beast::bind_front_handler(
-                            &WebSocket::on_handshake,
-                            shared_from_this()));
+                        beast::bind_front_handler(&WebSocket::on_handshake, shared_from_this()));
 }
 
+// Handles the WebSocket handshake
+// Inputs: ec - error code
 void WebSocket::on_handshake(beast::error_code ec)
 {
     if (ec)
@@ -109,6 +116,7 @@ void WebSocket::on_handshake(beast::error_code ec)
     sendAuthMessage();
 }
 
+// Sends the authentication message
 void WebSocket::sendAuthMessage()
 {
     const char *apiKey = std::getenv("APCA_API_KEY_ID");
@@ -131,11 +139,11 @@ void WebSocket::sendAuthMessage()
     std::lock_guard<std::mutex> lock(websocket_mutex_);
     ws_.async_write(
         net::buffer(jsonString),
-        beast::bind_front_handler(
-            &WebSocket::on_auth_write,
-            shared_from_this()));
+        beast::bind_front_handler(&WebSocket::on_auth_write, shared_from_this()));
 }
 
+// Handles the write operation for authentication
+// Inputs: ec - error code, bytes_transferred - number of bytes transferred
 void WebSocket::on_auth_write(beast::error_code ec, std::size_t bytes_transferred)
 {
     if (ec)
@@ -147,6 +155,7 @@ void WebSocket::on_auth_write(beast::error_code ec, std::size_t bytes_transferre
     doRead();
 }
 
+// Subscribes to the necessary channels
 void WebSocket::subscribeToChannels()
 {
     if (!authenticated_)
@@ -168,11 +177,10 @@ void WebSocket::subscribeToChannels()
     std::lock_guard<std::mutex> lock(websocket_mutex_);
     ws_.async_write(
         net::buffer(jsonString),
-        beast::bind_front_handler(
-            &WebSocket::on_write,
-            shared_from_this()));
+        beast::bind_front_handler(&WebSocket::on_write, shared_from_this()));
 }
 
+// Initiates the read operation
 void WebSocket::doRead()
 {
     if (stop_reading_ || reading_.exchange(true))
@@ -181,11 +189,11 @@ void WebSocket::doRead()
     std::lock_guard<std::mutex> lock(websocket_mutex_);
     ws_.async_read(
         buffer_,
-        beast::bind_front_handler(
-            &WebSocket::on_read,
-            shared_from_this()));
+        beast::bind_front_handler(&WebSocket::on_read, shared_from_this()));
 }
 
+// Handles the write operation
+// Inputs: ec - error code, bytes_transferred - number of bytes transferred
 void WebSocket::on_write(beast::error_code ec, std::size_t bytes_transferred)
 {
     if (ec)
@@ -195,6 +203,8 @@ void WebSocket::on_write(beast::error_code ec, std::size_t bytes_transferred)
     }
 }
 
+// Handles the read operation
+// Inputs: ec - error code, bytes_transferred - number of bytes transferred
 void WebSocket::on_read(beast::error_code ec, std::size_t bytes_transferred)
 {
     reading_ = false;
@@ -242,6 +252,8 @@ void WebSocket::on_read(beast::error_code ec, std::size_t bytes_transferred)
     }
 }
 
+// Processes the received message
+// Inputs: message - JSON message
 void WebSocket::processMessage(const Json::Value &message)
 {
     if (!message.isObject())

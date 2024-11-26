@@ -9,7 +9,11 @@
 #include <spdlog/spdlog.h>
 #include <spdlog/sinks/basic_file_sink.h>
 
-void executeSQL(const std::string &dbPath, const std::string &sqlCommand)
+// Executes an SQL command on the specified database.
+// Inputs:
+//   dbPath - Path to the SQLite database file.
+//   sqlCommand - SQL command to be executed.
+void ExecuteSQL(const std::string &dbPath, const std::string &sqlCommand)
 {
     sqlite3 *db;
     char *errorMessage = nullptr;
@@ -95,7 +99,7 @@ int main()
                     {
                         std::cout << "Creating database: " << dbPath << std::endl;
                         std::filesystem::create_directory("./database");
-                        executeSQL(dbPath, sqlCommand);
+                        ExecuteSQL(dbPath, sqlCommand);
                     }
                     else if (operation == "INSERT")
                     {
@@ -104,7 +108,7 @@ int main()
 
                         std::string insertSQL = "INSERT INTO my_table (time, symbol, open, high, low, close, volume) VALUES " + sqlCommand + ";";
                         std::cout << insertSQL << std::endl;
-                        executeSQL(dbPath, insertSQL);
+                        ExecuteSQL(dbPath, insertSQL);
                     }
                     else if (operation == "LOG")
                     {

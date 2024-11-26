@@ -18,8 +18,10 @@ public:
     std::string exchange;
     std::string tradeCondition;
 
-    Trade(std::string sys) : symbol{sys} {}
+    explicit Trade(std::string sys) : symbol{sys} {}
 
+    // Parses JSON data to populate the Trade object.
+    // @param json: JSON object containing trade data.
     void fromJson(const Json::Value &json)
     {
         price = json["p"].asDouble();
@@ -39,6 +41,7 @@ public:
         tradeCondition = json["z"].asString();
     }
 
+    // Prints the trade details to the standard output.
     void print() const
     {
         std::cout << "Symbol: " << symbol
@@ -58,4 +61,4 @@ public:
     }
 };
 
-#endif
+#endif // TRADE_HPP

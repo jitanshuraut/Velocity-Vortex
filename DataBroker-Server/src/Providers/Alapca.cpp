@@ -1,11 +1,15 @@
 #include "Providers/Alapca.hpp"
 
-void Alapca::initialize()
+// Initializes the Alapca provider.
+void Alapca::Initialize()
 {
     std::cout << "Alapca initialized" << std::endl;
     publisher.bind("tcp://*:" + std::to_string(port));
 }
 
+// Callback function for writing data received from CURL.
+// Input: contents - pointer to the data, size - size of each data element, nmemb - number of data elements, userp - user data.
+// Output: total size of the data written.
 size_t Alapca::WriteCallback(void *contents, size_t size, size_t nmemb, std::string *userp)
 {
     size_t totalSize = size * nmemb;
@@ -13,7 +17,10 @@ size_t Alapca::WriteCallback(void *contents, size_t size, size_t nmemb, std::str
     return totalSize;
 }
 
-std::string Alapca::urlEncode(const std::string &value)
+// URL encodes the given string.
+// Input: value - the string to be encoded.
+// Output: URL encoded string.
+std::string Alapca::UrlEncode(const std::string &value)
 {
     std::ostringstream encoded;
     for (char c : value)
@@ -30,7 +37,10 @@ std::string Alapca::urlEncode(const std::string &value)
     return encoded.str();
 }
 
-std::string Alapca::formatRFC3339(const std::string &dateStr)
+// Formats the given date string to RFC3339 format.
+// Input: dateStr - the date string to be formatted.
+// Output: RFC3339 formatted date string.
+std::string Alapca::FormatRFC3339(const std::string &dateStr)
 {
     if (dateStr.find('T') != std::string::npos)
     {
@@ -42,8 +52,10 @@ std::string Alapca::formatRFC3339(const std::string &dateStr)
     }
 }
 
-
-std::string Alapca::makeApiRequest(const std::string &url)
+// Makes an API request to the given URL.
+// Input: url - the URL to make the request to.
+// Output: response from the API as a string.
+std::string Alapca::MakeApiRequest(const std::string &url)
 {
     CURL *curl;
     CURLcode res;
@@ -74,9 +86,11 @@ std::string Alapca::makeApiRequest(const std::string &url)
     return readBuffer;
 }
 
-std::vector<Bar> Alapca::GetHistoricalBars(const std::string &symbols, const std::string &timeframe, const std::string &start, const std::string &end)
+// Retrieves historical bars for the given symbols and timeframe.
+// Input: symbols - the symbols to retrieve bars for, timeframe - the timeframe for the bars, start - start date, end - end date.
+// Output: vector of Bar objects.
+std::vector<Bar> Alapca::Get_Historical_Bars(const std::string &symbols, const std::string &timeframe, const std::string &start, const std::string &end)
 {
-
     std::ostringstream url;
     url << "https://data.alpaca.markets/v2/stocks/bars?symbols=" << urlEncode(symbols)
         << "&timeframe=" << urlEncode(timeframe)
@@ -92,7 +106,6 @@ std::vector<Bar> Alapca::GetHistoricalBars(const std::string &symbols, const std
 
     if (jsonReader.parse(jsonResponse, jsonData))
     {
-
         const Json::Value jsonBars = jsonData["bars"][symbols];
 
         for (const auto &bar : jsonBars)
@@ -109,7 +122,10 @@ std::vector<Bar> Alapca::GetHistoricalBars(const std::string &symbols, const std
     return bars;
 }
 
-Bar Alapca::GetLatestBars(const std::string &symbols)
+// Retrieves the latest bar for the given symbols.
+// Input: symbols - the symbols to retrieve the latest bar for.
+// Output: Bar object.
+Bar Alapca::Get_Latest_Bars(const std::string &symbols)
 {
     std::ostringstream url;
     url << "https://data.alpaca.markets/v2/stocks/bars/latest?symbols=" << urlEncode(symbols);
@@ -120,7 +136,6 @@ Bar Alapca::GetLatestBars(const std::string &symbols)
     std::string jsonResponse = makeApiRequest(url.str());
     if (jsonReader.parse(jsonResponse, jsonData))
     {
-
         const Json::Value &barData = jsonData["bars"][symbols];
         if (!barData.isNull())
         {
@@ -140,7 +155,10 @@ Bar Alapca::GetLatestBars(const std::string &symbols)
     return bar;
 }
 
-std::vector<Quote> Alapca::GetHistoricalQuotes(const std::string &symbols, const std::string &start, const std::string &end)
+// Retrieves historical quotes for the given symbols and date range.
+// Input: symbols - the symbols to retrieve quotes for, start - start date, end - end date.
+// Output: vector of Quote objects.
+std::vector<Quote> Alapca::Get_Historical_Quotes(const std::string &symbols, const std::string &start, const std::string &end)
 {
     std::ostringstream url;
     url << "https://data.alpaca.markets/v2/stocks/quotes?symbols=" << urlEncode(symbols)
@@ -155,7 +173,6 @@ std::vector<Quote> Alapca::GetHistoricalQuotes(const std::string &symbols, const
 
     if (jsonReader.parse(jsonResponse, jsonData))
     {
-
         const Json::Value jsonQuotes = jsonData["quotes"][symbols];
         for (const auto &quote : jsonQuotes)
         {
@@ -171,7 +188,10 @@ std::vector<Quote> Alapca::GetHistoricalQuotes(const std::string &symbols, const
     return quotes;
 }
 
-Quote Alapca::GetLatestQuotes(const std::string &symbols)
+// Retrieves the latest quote for the given symbols.
+// Input: symbols - the symbols to retrieve the latest quote for.
+// Output: Quote object.
+Quote Alapca::Get_Latest_Quotes(const std::string &symbols)
 {
     std::ostringstream url;
     url << "https://data.alpaca.markets/v2/stocks/quotes/latest?symbols=" << urlEncode(symbols);
@@ -192,7 +212,10 @@ Quote Alapca::GetLatestQuotes(const std::string &symbols)
     return quote;
 }
 
-std::vector<Trade> Alapca::GetHistoricalTrades(const std::string &symbols, const std::string &start, const std::string &end)
+// Retrieves historical trades for the given symbols and date range.
+// Input: symbols - the symbols to retrieve trades for, start - start date, end - end date.
+// Output: vector of Trade objects.
+std::vector<Trade> Alapca::Get_Historical_Trades(const std::string &symbols, const std::string &start, const std::string &end)
 {
     std::ostringstream url;
     url << "https://data.alpaca.markets/v2/stocks/trades?symbols=" << urlEncode(symbols)
@@ -223,7 +246,10 @@ std::vector<Trade> Alapca::GetHistoricalTrades(const std::string &symbols, const
     return trades;
 }
 
-Trade Alapca::GetLatestTrades(const std::string &symbols)
+// Retrieves the latest trade for the given symbols.
+// Input: symbols - the symbols to retrieve the latest trade for.
+// Output: Trade object.
+Trade Alapca::Get_Latest_Trades(const std::string &symbols)
 {
     std::ostringstream url;
     url << "https://data.alpaca.markets/v2/stocks/trades/latest?symbols=" << urlEncode(symbols);
@@ -245,7 +271,9 @@ Trade Alapca::GetLatestTrades(const std::string &symbols)
     return trade;
 }
 
-void Alapca::publish(const std::string &data, const std::string &info)
+// Publishes the given data with the provided info.
+// Input: data - the data to be published, info - additional info to be included.
+void Alapca::Publish(const std::string &data, const std::string &info)
 {
     std::string bundle = info + ":" + data;
     zmq::message_t message(bundle.size());

@@ -14,7 +14,7 @@ void Asychronous_publisher(DataFetcher &provider, const std::string &symbols, co
     std::string data = "";
     for (auto x : bars)
     {
-        data += " open-" + std::to_string(x.open)+" ";
+        data += " open-" + std::to_string(x.open) + " ";
     }
     std::string info = "Author - " + provider.GetProvider_name() + " About - " + symbols + " " + timeframe + " " + start + " " + end;
     provider.publish(data, info);

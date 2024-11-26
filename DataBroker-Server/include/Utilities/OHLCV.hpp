@@ -1,12 +1,12 @@
 #pragma once
+
 #include <string>
 
-
 struct OHLCV {
-    double open;
-    double high;
-    double low;
-    double close;
-    double volume;
-    std::string timestamp;
+  double open;            // Opening price
+  double high;            // Highest price
+  double low;             // Lowest price
+  double close;           // Closing price
+  double volume;          // Trading volume
+  std::string timestamp;  // Timestamp of the data
 };
