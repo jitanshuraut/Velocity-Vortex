@@ -2,9 +2,9 @@ name: CodeQL Analysis
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
   analyze:
@@ -12,6 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       security-events: write
+      packages: read
       actions: read
       contents: read
 
@@ -25,17 +26,68 @@ jobs:
           languages: c-cpp
           build-mode: manual
 
-      - name: Install dependencies
+      - name: Install system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y cmake g++ make
+          sudo apt-get install -y \
+            cmake g++ make \
+            libzmq3-dev \
+            libboost-all-dev \
+            libssl-dev \
+            libjsoncpp-dev \
+            libcurl4-openssl-dev \
+            libhiredis-dev \
+            libsqlite3-dev \
+            libspdlog-dev \
+            libfmt-dev \
+            nlohmann-json3-dev \
+            libwebsocketpp-dev \
+            pkg-config
 
-      - name: Build project
+      # vcpkg is required for servers that use CONFIG-mode cmake packages
+      # (ZeroMQ, cppzmq, jsoncpp CONFIG, crow, unofficial-sqlite3, etc.)
+      - name: Set up vcpkg
         run: |
-          mkdir build
-          cd build
-          cmake ..
-          make
+          git clone --depth 1 https://github.com/microsoft/vcpkg.git $HOME/vcpkg
+          $HOME/vcpkg/bootstrap-vcpkg.sh -disableMetrics
+          $HOME/vcpkg/vcpkg install \
+            zeromq cppzmq jsoncpp crow \
+            hiredis sqlite3 spdlog fmt nlohmann-json \
+            --triplet x64-linux
+
+      # DataBroker-Server vendors websocketpp as a local directory
+      - name: Fetch websocketpp headers
+        run: |
+          git clone --depth 1 https://github.com/zaphoyd/websocketpp.git \
+            DataBroker-Server/websocketpp
+
+      # DataBroker-Server: uses find_library / find_package (non-CONFIG) — system packages suffice
+      - name: Build DataBroker-Server
+        run: |
+          cmake -S DataBroker-Server -B DataBroker-Server/build \
+            -DCMAKE_BUILD_TYPE=Release
+          cmake --build DataBroker-Server/build --parallel $(nproc)
+
+      # IO-Server and Order-Manager-Server use vcpkg CONFIG packages;
+      # override the hardcoded Windows toolchain path with the CI vcpkg path
+      - name: Build IO-Server
+        run: |
+          cmake -S IO-Server -B IO-Server/build \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_TOOLCHAIN_FILE=$HOME/vcpkg/scripts/buildsystems/vcpkg.cmake \
+            -DVCPKG_TARGET_TRIPLET=x64-linux
+          cmake --build IO-Server/build --parallel $(nproc)
+
+      - name: Build Order-Manager-Server
+        run: |
+          cmake -S Order-Manager-Server -B Order-Manager-Server/build \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_TOOLCHAIN_FILE=$HOME/vcpkg/scripts/buildsystems/vcpkg.cmake \
+            -DVCPKG_TARGET_TRIPLET=x64-linux
+          cmake --build Order-Manager-Server/build --parallel $(nproc)
+
+      # Computing-Server is excluded: it requires LibTorch (PyTorch C++ library, ~2 GB)
+      # which is impractical to install on a standard CI runner.
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
