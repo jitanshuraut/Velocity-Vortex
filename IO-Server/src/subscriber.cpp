@@ -1,5 +1,6 @@
 #include <iostream>
 #include <fstream>
+#include <sstream>
 #include <chrono>
 #include <thread>
 #include <vector>
@@ -60,7 +61,7 @@ int main()
 
     for (const auto &channel : channels)
     {
-        redisReply *reply = (redisReply *)redisCommand(c, "SUBSCRIBE %s", channel.c_str());
+        redisReply *reply = static_cast<redisReply *>(redisCommand(c, "SUBSCRIBE %s", channel.c_str()));
         if (reply == NULL)
         {
             std::cout << "Error subscribing to " << channel << std::endl;
@@ -77,7 +78,7 @@ int main()
     while (true)
     {
         redisReply *reply;
-        if (redisGetReply(c, (void **)&reply) == REDIS_OK)
+        if (redisGetReply(c, reinterpret_cast<void **>(&reply)) == REDIS_OK)
         {
             if (reply->type == REDIS_REPLY_ARRAY && reply->elements == 3)
             {
@@ -104,8 +105,6 @@ int main()
                     else if (operation == "INSERT")
                     {
                         std::cout << "Inserting data into database: " << dbPath << std::endl;
-                        std::string tableName = dbFileName.substr(0, dbFileName.find(".db"));
-
                         std::string insertSQL = "INSERT INTO my_table (time, symbol, open, high, low, close, volume) VALUES " + sqlCommand + ";";
                         std::cout << insertSQL << std::endl;
                         ExecuteSQL(dbPath, insertSQL);
